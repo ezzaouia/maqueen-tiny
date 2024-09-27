@@ -155,15 +155,13 @@ namespace tiny {
     //% block
     //% group="Sensors"
     export function isIrLeft(state: IRState): boolean {
-        // TODO
-        return false
+        return maqueen.readPatrol(maqueen.Patrol.PatrolLeft) === state
     }
 
     //% block
     //% group="Sensors"
     export function isIrRight(state: IRState): boolean {
-        // TODO
-        return false
+        return maqueen.readPatrol(maqueen.Patrol.PatrolRight) === state
     }
 
     //% block
@@ -359,4 +357,3 @@ namespace tiny {
         return { red, green, blue };
     }
 }
-

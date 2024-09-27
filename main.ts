@@ -228,11 +228,13 @@ namespace tiny {
                 maqueen.motorStop(maqueen.Motors.All)
                 break;
             }
+            case Direction.Left:
             case Direction.SpinLeft: {
                 maqueen.motorStop(maqueen.Motors.M1)
                 maqueen.motorRun(maqueen.Motors.M2, maqueen.Dir.CW, speed)
                 break;
-            }
+            } 
+            case Direction.Right:
             case Direction.SpinRight: {
                 maqueen.motorStop(maqueen.Motors.M2)
                 maqueen.motorRun(maqueen.Motors.M1, maqueen.Dir.CW, speed)

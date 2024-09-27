@@ -1,4 +1,4 @@
-namespace tiny {
+namespace robot {
 
     export enum Mode {
         Safe = 0,

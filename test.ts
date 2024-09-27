@@ -1,3 +1,3 @@
 input.onButtonPressed(Button.A, () => {
-    tiny.move(tiny.Direction.Left)
+    robot.move(robot.Direction.Left)
 })

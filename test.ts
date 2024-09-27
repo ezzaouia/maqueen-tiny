@@ -1,3 +1,3 @@
 input.onButtonPressed(Button.A, () => {
-    robot.move(robot.Direction.Left)
+    robot.playMusic(robot.Music.birthday)
 })

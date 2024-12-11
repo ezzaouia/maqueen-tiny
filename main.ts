@@ -119,7 +119,7 @@ namespace robot {
     //% block
     //% group="Drive"
     export function tank(leftSpeed: number, rightSpeed?: number) {
-        motorTank(leftSpeed, rightSpeed || leftSpeed);
+        motorTank(leftSpeed, rightSpeed ?? leftSpeed);
     }
 
     //% block

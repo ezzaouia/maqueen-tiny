@@ -118,13 +118,28 @@ basic.forever(function () {
 })
 ```
 
-### Dance party
+### Dancing pet
+
+Autopilot blocks (`follow black line`, `avoid obstacles`, `follow my hand`) wait
+while the robot is doing a move that ends by itself (`dance`, `turn`, `move for`,
+or a `move` in safe mode), then carry on. So you can mix them freely:
 
 ```blocks
+robot.setMode(robot.Mode.Normal)
+robot.dance()
 input.onButtonPressed(Button.B, function () {
     robot.dance()
 })
+input.onButtonPressed(Button.A, function () {
+    robot.playMusic(robot.Music.birthday)
+    robot.turn(robot.Turn.Left, 360)
+})
+basic.forever(function () {
+    robot.followObject()
+})
 ```
+
+`play music` never waits: the tune plays while the robot keeps moving.
 
 ### Tilt remote control
 

@@ -168,6 +168,7 @@ namespace robot {
     let _obstacleWatchers: ObstacleWatcher[];
     let _lineWatchers: LineWatcher[];
     let _remoteLastSeen: number;
+    let _maneuvers: number;
 
     function cfg(): Settings {
         if (!_settings) _settings = new Settings();
@@ -232,8 +233,10 @@ namespace robot {
             case Direction.SpinRight: setWheels(s, -s); break;
             default: setWheels(0, 0); break;
         }
+        beginManeuver();
         basic.pause(ms);
         setWheels(0, 0);
+        endManeuver();
     }
 
     /**
@@ -247,10 +250,12 @@ namespace robot {
     //% weight=90 group="Drive"
     export function turn(side: Turn, degrees: number) {
         const s = limit(TURN_SPEED);
+        beginManeuver();
         if (side === Turn.Left) setWheels(-s, s);
         else setWheels(s, -s);
         basic.pause(Math.abs(degrees) * cfg().quarterTurnMs / 90);
         setWheels(0, 0);
+        endManeuver();
     }
 
     /**
@@ -509,6 +514,9 @@ namespace robot {
 
     // ---------------------------------------------------------------
     // Autopilot: put these inside a "forever" loop
+    //
+    // Each step does nothing while a maneuver (dance, turn, move for...,
+    // a safe-mode move) runs somewhere else, so they can be mixed freely.
     // ---------------------------------------------------------------
 
     /**
@@ -518,6 +526,7 @@ namespace robot {
     //% blockId=robot_followLine block="follow black line"
     //% weight=100 group="Autopilot"
     export function followLine() {
+        if (waitWhileBusy()) return;
         const s = limit(cfg().speed);
         const left = isOnLine(Side.Left);
         const right = isOnLine(Side.Right);
@@ -547,11 +556,14 @@ namespace robot {
     //% cm.defl=15 cm.min=5 cm.max=100
     //% weight=95 group="Autopilot"
     export function avoidObstacles(cm: number = 15) {
+        if (waitWhileBusy()) return;
         const s = limit(cfg().speed);
         if (isObstacleCloserThan(cm)) {
+            beginManeuver();
             setWheels(-s, -s);
             basic.pause(300);
             turn(Math.randomBoolean() ? Turn.Left : Turn.Right, randint(60, 120));
+            endManeuver();
         } else {
             setWheels(s, s);
         }
@@ -564,6 +576,7 @@ namespace robot {
     //% blockId=robot_followObject block="follow my hand"
     //% weight=90 group="Autopilot"
     export function followObject() {
+        if (waitWhileBusy()) return;
         const s = limit(cfg().speed);
         const d = getObstacleDistance();
         if (d < 7) setWheels(-s / 2, -s / 2);
@@ -573,7 +586,8 @@ namespace robot {
     }
 
     /**
-     * Do a little dance with music and lights.
+     * Do a little dance with music and lights. Autopilot blocks such as
+     * "follow my hand" wait until the dance is over, then carry on.
      */
     //% blockId=robot_dance block="dance"
     //% weight=85 group="Autopilot"
@@ -581,6 +595,7 @@ namespace robot {
         const s = limit(TURN_SPEED + 40);
         startMelody(Music.nyan);
         const colors = [Colors.Red, Colors.Yellow, Colors.Green, Colors.Blue];
+        beginManeuver();
         for (let i = 0; i < 4; i++) {
             strip().showColor(colors[i]);
             setWheels(-s, s);
@@ -593,6 +608,7 @@ namespace robot {
         setWheels(-s, -s);
         basic.pause(200);
         setWheels(0, 0);
+        endManeuver();
         rainbow();
     }
 
@@ -635,7 +651,7 @@ namespace robot {
     export function startRemoteReceiver(radioGroup: number) {
         radio.setGroup(radioGroup);
         radio.onReceivedValue(function (name: string, value: number) {
-            if (name !== "drive") return;
+            if (name !== "drive" || busy()) return;
             const right = (value % 1024) - 256;
             const left = Math.idiv(value, 1024) - 256;
             _remoteLastSeen = control.millis();
@@ -745,9 +761,32 @@ namespace robot {
         const c = cfg();
         setWheels(limit(left), limit(right));
         if (c.mode === Mode.Safe) {
+            beginManeuver();
             basic.pause(Math.constrain(step, 1, c.maxStep) * STEP_MS);
             setWheels(0, 0);
+            endManeuver();
         }
+    }
+
+    // A maneuver is a move that ends by itself (dance, turn, move for...).
+    // While one runs, the autopilot and the remote leave the wheels alone.
+    function beginManeuver() {
+        _maneuvers = (_maneuvers || 0) + 1;
+    }
+
+    function endManeuver() {
+        _maneuvers = Math.max(0, (_maneuvers || 0) - 1);
+    }
+
+    function busy(): boolean {
+        return (_maneuvers || 0) > 0;
+    }
+
+    // Returns true (after a short nap) when an autopilot step should skip.
+    function waitWhileBusy(): boolean {
+        if (!busy()) return false;
+        basic.pause(20);
+        return true;
     }
 
     // Cap a signed speed to what the current mode allows.

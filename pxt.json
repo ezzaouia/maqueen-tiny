@@ -1,6 +1,6 @@
 {
     "name": "maqueen-tiny",
-    "description": "",
+    "description": "Kid-friendly blocks to drive the DFRobot Maqueen robot with a micro:bit",
     "dependencies": {
         "core": "*",
         "radio": "*",
